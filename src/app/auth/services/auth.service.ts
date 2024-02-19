@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient, HttpHeaderResponse, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environments';
 import { Observable, catchError, map, of, tap, throwError } from 'rxjs';
 import { AuthStatus, CheckTokenResponse, LoginResponse, User } from '../interfaces';
@@ -9,8 +9,8 @@ import { AuthStatus, CheckTokenResponse, LoginResponse, User } from '../interfac
 })
 export class AuthService {
 
-  // private readonly baseUrl: string = environment.baseUrl;
-  private readonly baseUrl: string = 'http://localhost:3000';
+  private readonly baseUrl: string = environment.baseUrl;
+  // private readonly baseUrl: string = 'http://localhost:3000';
   private http = inject( HttpClient );
 
   private _currentUser = signal<User|null>(null);
@@ -19,15 +19,15 @@ export class AuthService {
   public currentUser = computed( () => this._currentUser() );
   public authStatus = computed( () => this._authStatus() );
 
+  constructor(){
+    this.checkAuthStatus().subscribe();
+  }
+
   private setAuthentication(user: User, token: string): boolean {
     this._currentUser.set( user );
     this._authStatus.set( AuthStatus.authenticated );
     localStorage.setItem('token', token);
     return true;
-  }
-
-  constructor(){
-    this.checkAuthStatus().subscribe();
   }
 
   login( email: string, password: string): Observable<boolean>{
@@ -36,7 +36,6 @@ export class AuthService {
     return this.http.post<LoginResponse>(url, body)
       .pipe(
         map( ({user, token}) => this.setAuthentication(user, token) ),
-        // todo: errores
         catchError( err => throwError( () => err.error.message ) )
       )
   }
